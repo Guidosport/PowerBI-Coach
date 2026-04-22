@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power BI Coach — Hotel Clarity</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE8;
+  --border: #E0DDD8; --border2: #C8C4BE;
+  --text: #1A1815; --text2: #6B6760; --text3: #9B9890;
+  --accent: #7A3A24; --accent-light: #F5EAE6;
+  --blue-bg: #EFF6FF; --blue-text: #1E40AF;
+  --green-bg: #F0FDF4; --green-text: #14532D;
+  --radius: 10px; --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+#topbar { background: var(--accent); color: #F7EDE8; padding: 10px 24px; display: flex; align-items: center; gap: 12px; font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0; }
+#topbar .logo { background: #F7EDE8; color: var(--accent); font-weight: 700; padding: 3px 8px; border-radius: 3px; }
+#topbar .sep { opacity: 0.4; }
+#topbar .right { margin-left: auto; opacity: 0.6; font-size: 10px; }
+#layout { display: grid; grid-template-columns: 260px 1fr; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+#sidebar { background: #2C1810; display: flex; flex-direction: column; overflow-y: auto; }
+.sb-section { padding: 14px 13px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sb-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 8px; }
+.sb-btn { display: block; width: 100%; text-align: left; padding: 8px 10px; font-size: 14px; color: rgba(255,255,255,0.82); background: none; border: none; border-radius: var(--radius-sm); cursor: pointer; font-family: 'Georgia', serif; line-height: 1.4; transition: all 0.12s; margin-bottom: 2px; }
+.sb-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.sb-btn .ic { margin-right: 6px; font-size: 13px; }
+.info-table-item { margin-bottom: 8px; }
+.info-table-name { font-family: 'Courier New', monospace; font-size: 10.5px; color: #F2C94C; font-weight: 600; }
+.info-table-cols { font-size: 10px; color: rgba(255,255,255,0.4); line-height: 1.4; }
+
+/* CHAT */
+#chat-area { display: flex; flex-direction: column; overflow: hidden; }
+#input-area { padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; }
+#user-input { flex: 1; padding: 9px 13px; font-size: 14px; font-family: 'Georgia', serif; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); resize: none; line-height: 1.5; outline: none; min-height: 42px; max-height: 90px; }
+#user-input:focus { border-color: var(--accent); }
+#send-btn { padding: 9px 18px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-size: 13px; font-family: 'Courier New', monospace; cursor: pointer; letter-spacing: 0.05em; transition: background 0.12s; white-space: nowrap; }
+#send-btn:hover { background: #5A2A1A; }
+#chips { padding: 7px 14px 6px; display: flex; gap: 5px; flex-wrap: wrap; background: var(--surface2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.chip { font-size: 11px; padding: 4px 10px; border: 1px solid var(--border2); border-radius: 20px; cursor: pointer; color: var(--text2); background: var(--surface); font-family: 'Courier New', monospace; transition: all 0.12s; white-space: nowrap; }
+.chip:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* MESSAGES — nieuwste bovenaan via column-reverse */
+#messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column-reverse; gap: 14px; }
+.msg-row { display: flex; gap: 10px; align-items: flex-start; }
+.msg-row.user { flex-direction: row-reverse; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; font-family: 'Courier New', monospace; }
+.avatar.bot { background: var(--accent); color: white; }
+.avatar.user { background: var(--text); color: var(--bg); }
+.bubble { max-width: 680px; padding: 14px 18px; border-radius: var(--radius); font-size: 15px; line-height: 1.8; box-shadow: var(--shadow); }
+.bubble.bot { background: var(--surface); border: 1px solid var(--border); border-radius: 2px 10px 10px 10px; color: var(--text); }
+.bubble.user { background: var(--text); color: var(--bg); border-radius: 10px 2px 10px 10px; font-size: 14px; }
+.bubble.bot h3 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; font-family: 'Courier New', monospace; }
+.bubble.bot h3:first-child { margin-top: 0; }
+.bubble.bot p { margin-bottom: 10px; }
+.bubble.bot p:last-child { margin-bottom: 0; }
+.bubble.bot ul, .bubble.bot ol { padding-left: 20px; margin: 6px 0 10px; }
+.bubble.bot li { margin-bottom: 5px; line-height: 1.7; }
+.bubble.bot code { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-size: 13px; font-family: 'Courier New', monospace; color: var(--accent); }
+.bubble.bot pre { background: #1A1815; color: #F2C94C; border-radius: var(--radius-sm); padding: 14px 16px; font-family: 'Courier New', monospace; font-size: 12.5px; line-height: 1.85; white-space: pre-wrap; margin: 8px 0; position: relative; }
+.bubble.bot pre .cpbtn { position: absolute; top: 8px; right: 10px; background: rgba(255,255,255,0.1); color: #ccc; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: 'Courier New', monospace; }
+.bubble.bot pre .cpbtn:hover { background: rgba(255,255,255,0.22); color: #fff; }
+.bubble.bot strong { font-weight: 600; }
+.s-lbl { font-family: 'Courier New', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.typing-dots { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); animation: pulse 1.2s infinite; }
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.2}40%{opacity:1}}
+#messages::-webkit-scrollbar{width:4px}
+#messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* MODAL */
+#dm-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div class="logo">PBI</div>
+  <span class="sep">|</span>
+  <span>Power BI Coach — Hotel Clarity</span>
+  <span class="right">Fontys Hogescholen · Opdracht 2</span>
+</div>
+<div id="layout">
+  <div id="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Opdrachtvragen</div>
+      <button class="sb-btn" onclick="ask('Hoe maak ik het tabblad Maand Kamer?')"><span class="ic">📊</span>Maand Kamer tabblad</button>
+      <button class="sb-btn" onclick="ask('Hoe maak ik het tabblad Maand Diensten?')"><span class="ic">🍽️</span>Maand Diensten tabblad</button>
+      <button class="sb-btn" onclick="ask('Hoe bouw ik het Klanten tabblad met ranking per land?')"><span class="ic">🌍</span>Klanten tabblad</button>
+      <button class="sb-btn" onclick="ask('Hoe maak ik het Klantrating tabblad?')"><span class="ic">⭐</span>Klantrating tabblad</button>
+      <button class="sb-btn" onclick="ask('Hoe maak ik signaalkleuren groen rood voor afwijkingen?')"><span class="ic">🚦</span>Signaalkleuren</button>
+      <button class="sb-btn" onclick="ask('Hoe maak ik een navigatiemenu op de startpagina?')"><span class="ic">🏠</span>Navigatiemenu</button>
+      <button class="sb-btn" onclick="ask('Hoe gebruik ik de Ultimate Calendar van Avi Singh?')"><span class="ic">📅</span>Ultimate Calendar</button>
+      <button class="sb-btn" onclick="ask('Hoe maak ik een aparte Metingen tabel?')"><span class="ic">⚡</span>_Metingen tabel</button>
+      <button class="sb-btn" onclick="ask('Wat zijn de beoordelingscriteria van de opdracht?')"><span class="ic">📋</span>Beoordelingscriteria</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">DAX & Techniek</div>
+      <button class="sb-btn" onclick="ask('Hoe bereken ik de omzet per kamer in DAX?')"><span class="ic">∑</span>Omzet kamers DAX</button>
+      <button class="sb-btn" onclick="ask('Hoe bereken ik cumulatieve omzet YTD?')"><span class="ic">∑</span>YTD cumulatief</button>
+      <button class="sb-btn" onclick="ask('Hoe vergelijk ik met hetzelfde periode vorig jaar?')"><span class="ic">∑</span>Vorig jaar vergelijking</button>
+      <button class="sb-btn" onclick="ask('Wat is CALCULATE en hoe gebruik ik het?')"><span class="ic">∑</span>CALCULATE uitleg</button>
+      <button class="sb-btn" onclick="ask('Wat is SUMX en wanneer gebruik ik het?')"><span class="ic">∑</span>SUMX vs SUM</button>
+      <button class="sb-btn" onclick="ask('Hoe maak ik een ranking van landen met RANKX?')"><span class="ic">∑</span>RANKX ranking</button>
+      <button class="sb-btn" onclick="ask('Hoe combineer ik tabellen via Append in Power Query?')"><span class="ic">🔧</span>Append Power Query</button>
+      <button class="sb-btn" onclick="ask('Welke Power Query stappen zijn nodig voor fOvernachtingen?')"><span class="ic">🔧</span>PQ stappen Overnachtingen</button>
+      <button class="sb-btn" onclick="ask('Welke Power Query stappen zijn nodig voor fOverige Diensten?')"><span class="ic">🔧</span>PQ stappen Overige Diensten</button>
+      <button class="sb-btn" onclick="ask('Hoe voeg ik dKlantinformatie samen met geografische spreiding?')"><span class="ic">🔧</span>PQ stappen Klantinformatie</button>
+      <button class="sb-btn" onclick="ask('Hoe voeg ik dSeizoen samen met dKalender en wat is MaandMetSales?')"><span class="ic">🔧</span>Seizoen + MaandMetSales</button>
+      <button class="sb-btn" onclick="ask('Welke dataset versie moet ik gebruiken?')"><span class="ic">📋</span>Dataset versies</button>
+      <button class="sb-btn" onclick="ask('Hoe bereken ik omzet exclusief BTW?')"><span class="ic">🧾</span>BTW-berekening</button>
+      <button class="sb-btn" onclick="ask('Hoe geef ik omzet per jaar weer in een grafiek?')"><span class="ic">📈</span>Omzet per jaar grafiek</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Datamodel</div>
+      <button class="sb-btn" onclick="showDatamodel()"><span class="ic">🔗</span>Toon datamodel</button>
+      <button class="sb-btn" onclick="ask('Hoe zet ik het datamodel op als star schema?')"><span class="ic">⭐</span>Star schema uitleg</button>
+    </div>
+    <div class="sb-section" style="flex:1;border-bottom:none;">
+      <div class="sb-label">Tabellen in dataset (ter info)</div>
+      <div style="padding:4px 0;">
+        <div class="info-table-item"><div class="info-table-name">Overnachtingen</div><div class="info-table-cols">Factuurdatum, Klantnummer, Tariefsklasse, Aantal, KamerSeizoensCode…</div></div>
+        <div class="info-table-item"><div class="info-table-name">Prijstabel_Kamers</div><div class="info-table-cols">KamerSeizoensCode, Tariefsklasse A/B/C, BTW %…</div></div>
+        <div class="info-table-item"><div class="info-table-name">Overige_Diensten</div><div class="info-table-cols">Grootboekrekening, Aantal, KamerSeizoensCode…</div></div>
+        <div class="info-table-item"><div class="info-table-name">Prijs_Overig</div><div class="info-table-cols">Code, Naam, Prijs, BTW %…</div></div>
+        <div class="info-table-item"><div class="info-table-name">Klantinformatie</div><div class="info-table-cols">Klantnummer, Geslacht, Leeftijdscat, P/Z…</div></div>
+        <div class="info-table-item"><div class="info-table-name">Geografische_Spreiding</div><div class="info-table-cols">Klantnummer, Landcode, Land…</div></div>
+        <div class="info-table-item"><div class="info-table-name">Rating_Diensten</div><div class="info-table-cols">Betalingsreferentie, Ontbijt, Lunch, Dinner, Kamers…</div></div>
+        <div class="info-table-item"><div class="info-table-name">_Kalender / Seizoen</div><div class="info-table-cols">Datum, Jaar, Maand… / Periode, Seizoen…</div></div>
+        <div class="info-table-item"><div class="info-table-name">_Metingen</div><div class="info-table-cols">Lege tabel — alle DAX measures hier</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="chat-area">
+    <div id="input-area">
+      <textarea id="user-input" placeholder="Stel een Power BI vraag over de opdracht…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
+      <button id="send-btn" onclick="sendMsg()">Verstuur →</button>
+    </div>
+    <div id="chips">
+      <span class="chip" onclick="ask('Welke paginas moet het dashboard bevatten?')">Dashboard pagina's</span>
+      <span class="chip" onclick="ask('Welke Power Query stappen zijn nodig voor fOvernachtingen?')">PQ stappen Overnachtingen</span>
+      <span class="chip" onclick="ask('Welke Power Query stappen zijn nodig voor fOverige Diensten?')">PQ stappen Diensten</span>
+      <span class="chip" onclick="ask('Hoe voeg ik dSeizoen samen met dKalender en wat is MaandMetSales?')">MaandMetSales kolom</span>
+      <span class="chip" onclick="ask('Welke dataset versie moet ik gebruiken?')">Dataset versies</span>
+      <span class="chip" onclick="ask('Hoe maak ik signaalkleuren groen rood voor afwijkingen?')">Signaalkleuren</span>
+    </div>
+    <div id="messages"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATAMODEL MODAL ────────────────────────────────────────────────
+function showDatamodel() {
+  const existing = document.getElementById('dm-modal');
+  if (existing) { existing.remove(); return; }
+  const T = {
+    ovn: { x:310, y:200, w:190, label:'Overnachtingen', color:'#7A3A24', type:'fact',
+      fields:['Factuurdatum','Klantnummer','Tariefsklasse','Aantal','KamerSeizoensCode','Betalingsreferentie','Periode','Bedrijfsonderdeel'] },
+    ovd: { x:590, y:200, w:185, label:'Overige_Diensten', color:'#9B4E2A', type:'fact',
+      fields:['Factuurdatum','Klantnummer','Grootboekrekening','Aantal','KamerSeizoensCode'] },
+    prk: { x:50,  y:390, w:185, label:'Prijstabel_Kamers', color:'#1D4ED8', type:'dim',
+      fields:['KamerSeizoensCode','Tariefsklasse A','Tariefsklasse B','Tariefsklasse C','BTW %'] },
+    pro: { x:790, y:390, w:165, label:'Prijs_Overig', color:'#1D4ED8', type:'dim',
+      fields:['Code','Naam','Prijs','BTW %'] },
+    kli: { x:50,  y:60,  w:185, label:'Klantinformatie', color:'#15803D', type:'dim',
+      fields:['Klantnummer','P/Z','Geslacht','LeeftijdsCAT'] },
+    geo: { x:590, y:60,  w:185, label:'Geo_Spreiding', color:'#15803D', type:'dim',
+      fields:['Klantnummer','Landcode','Land'] },
+    rat: { x:790, y:60,  w:165, label:'Rating_Diensten', color:'#B45309', type:'dim',
+      fields:['Betalingsreferentie','Ontbijt','Lunch','Dinner','Kamers','Welness'] },
+    sei: { x:310, y:60,  w:165, label:'Seizoen', color:'#6D28D9', type:'dim',
+      fields:['Periode','Maand','Seizoen'] },
+    bed: { x:790, y:260, w:165, label:'Bedrijfsonderdelen', color:'#0E7490', type:'dim',
+      fields:['Code','Onderdeel'] },
+    kal: { x:50,  y:260, w:185, label:'_Kalender', color:'#374151', type:'dim',
+      fields:['Datum','Jaar','Maand','Kwartaal','Week…'] },
+    met: { x:310, y:490, w:165, label:'_Metingen', color:'#4B5563', type:'measure',
+      fields:['[alle DAX measures]'] },
+  };
+  const rels = [
+    ['ovn','KamerSeizoensCode','prk','KamerSeizoensCode','#2563EB'],
+    ['ovn','Klantnummer','kli','Klantnummer','#16A34A'],
+    ['ovn','Klantnummer','geo','Klantnummer','#16A34A'],
+    ['ovn','Betalingsreferentie','rat','Betalingsreferentie','#D97706'],
+    ['ovn','Periode','sei','Periode','#7C3AED'],
+    ['ovn','Bedrijfsonderdeel','bed','Code','#0E7490'],
+    ['ovd','Grootboekrekening','pro','Code','#2563EB'],
+    ['ovd','Klantnummer','kli','Klantnummer','#16A34A'],
+    ['kal','Datum','ovn','Factuurdatum','#374151'],
+    ['kal','Datum','ovd','Factuurdatum','#374151'],
+  ];
+  const HDR=28,ROW=20,PAD=10;
+  const tKeys = Object.keys(T);
+  function tH(t){return HDR+t.fields.length*ROW+PAD;}
+  function fY(t,fi){return t.y+HDR+PAD/2+fi*ROW+ROW/2;}
+  function rX(t){return t.x+t.w;} function lX(t){return t.x;}
+  tKeys.forEach(k=>{T[k].h=tH(T[k]);});
+  const colors=[...new Set(rels.map(r=>r[4]))];
+  const markers=colors.map(c=>`<marker id="a${c.slice(1)}" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="${c}"/></marker>`).join('');
+  let lines='';
+  rels.forEach(([fid,ff,tid,tf,col])=>{
+    const from=T[fid],to=T[tid];
+    const fi=from.fields.indexOf(ff),ti=to.fields.indexOf(tf);
+    if(fi<0||ti<0)return;
+    const fy=fY(from,fi),ty=fY(to,ti);
+    let fx,tx;
+    if(to.x>from.x+from.w-10){fx=rX(from);tx=lX(to);}
+    else if(to.x+to.w<from.x+10){fx=lX(from);tx=rX(to);}
+    else if(to.y<from.y){fx=from.x+from.w/2;tx=to.x+to.w/2;}
+    else{fx=from.x+from.w/2;tx=to.x+to.w/2;}
+    const mx=(fx+tx)/2;
+    lines+=`<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="${col}" stroke-width="2.5" opacity="0.8" marker-end="url(#a${col.slice(1)})"/>`;
+    const lx=(fx+tx)/2,ly=Math.min(fy,ty)+(Math.abs(ty-fy)/2)-6;
+    lines+=`<rect x="${lx-32}" y="${ly-10}" width="64" height="14" rx="3" fill="white" opacity="0.9"/>`;
+    lines+=`<text x="${lx}" y="${ly+1}" font-size="8.5" fill="${col}" text-anchor="middle" font-family="Courier New,monospace" font-weight="bold">${ff}</text>`;
+  });
+  let rects='';
+  tKeys.forEach(k=>{
+    const t=T[k];const h=t.h;
+    const bg=t.type==='fact'?'#FEF3EE':t.type==='measure'?'#F3F4F6':'#F0F6FF';
+    rects+=`<g><rect x="${t.x+2}" y="${t.y+2}" width="${t.w}" height="${h}" rx="6" fill="rgba(0,0,0,0.07)"/>
+    <rect x="${t.x}" y="${t.y}" width="${t.w}" height="${h}" rx="6" fill="${bg}" stroke="${t.color}" stroke-width="${t.type==='fact'?2.5:1.5}"/>
+    <rect x="${t.x}" y="${t.y}" width="${t.w}" height="${HDR}" rx="6" fill="${t.color}"/>
+    <rect x="${t.x}" y="${t.y+HDR-6}" width="${t.w}" height="6" fill="${t.color}"/>
+    <text x="${t.x+t.w/2}" y="${t.y+19}" font-size="12" font-weight="bold" fill="white" text-anchor="middle" font-family="Courier New,monospace">${t.label}</text>`;
+    t.fields.forEach((f,i)=>{
+      const fy2=fY(t,i);
+      const isKey=rels.some(r=>(r[0]===k&&r[1]===f)||(r[2]===k&&r[3]===f));
+      if(isKey)rects+=`<rect x="${t.x+3}" y="${fy2-13}" width="${t.w-6}" height="${ROW-2}" rx="3" fill="${t.color}20"/>`;
+      rects+=`<text x="${t.x+8}" y="${fy2}" font-size="10.5" fill="${isKey?'#1E3A8A':'#374151'}" font-family="Courier New,monospace" font-weight="${isKey?'bold':'normal'}">${isKey?'🔑 ':'    '}${f}</text>`;
+    });
+    rects+=`</g>`;
+  });
+  const svg=`<svg viewBox="0 0 1010 640" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <defs>${markers}</defs><rect width="1010" height="640" fill="#F8F9FA" rx="10"/>
+    ${lines}${rects}</svg>`;
+  const modal=document.createElement('div');
+  modal.id='dm-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;';
+  modal.innerHTML=`<div style="background:#fff;border-radius:12px;width:92vw;max-width:1080px;height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #E0DDD8;flex-shrink:0;">
+      <strong style="font-size:15px;">Datamodel Hotel Clarity — Star Schema</strong>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:12px;color:#6B6760;font-family:'Courier New',monospace;">🔑 sleutelveld &nbsp;|&nbsp; pijl → naar dimensietabel</span>
+        <button onclick="document.getElementById('dm-modal').remove()" style="background:#7A3A24;color:white;border:none;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px;">✕ Sluiten</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;padding:8px 20px;border-bottom:1px solid #E0DDD8;flex-wrap:wrap;flex-shrink:0;font-size:12px;">
+      <span>🟫 Feitentabel</span><span>🔵 Dimensie (prijzen)</span><span>🟢 Dimensie (klant)</span><span>🟠 Ratings</span><span>🟣 Seizoen/tijd</span><span>⚫ Kalender</span><span>⬜ Measures</span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:16px;">${svg}</div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+
+// ─── KENNISBANK ─────────────────────────────────────────────────────
+const KB = [
+  {
+    keys: ['omzet','jaar','grafiek','per jaar','weergeven','laten zien','tonen','visueel','chart','visual'],
+    title: 'Omzet per jaar weergeven',
+    html: `<p>Om omzet per jaar te tonen heb je drie tabellen nodig die samenwerken: <strong>Overnachtingen</strong> bevat de boekingen, <strong>Prijstabel_Kamers</strong> de bijbehorende kamerprijzen en <strong>_Kalender</strong> de tijdsdimensie.</p>
+
+<h3>Waarom deze drie tabellen?</h3>
+<ul>
+<li><strong>Overnachtingen</strong> — bevat per boeking het veld <code>Aantal</code> (nachten) en <code>Tariefsklasse</code> (A, B of C). Maar de prijs staat hier <em>niet</em> in — die zit in een aparte tabel.</li>
+<li><strong>Prijstabel_Kamers</strong> — bevat de prijs per tariefsklasse per seizoen. Koppeling via het veld <code>KamerSeizoensCode</code>, dat kamernummer én seizoen combineert (bijv. "Kamer1Low"). Zonder deze koppeling kun je geen omzet berekenen.</li>
+<li><strong>_Kalender</strong> — de Ultimate Calendar van Avi Singh. Koppeling via <code>_Kalender[Datum]</code> → <code>Overnachtingen[Factuurdatum]</code>. Hiermee kun je filteren op jaar, maand of kwartaal en tijdsintelligentiefuncties zoals SAMEPERIODLASTYEAR gebruiken.</li>
+</ul>
+
+<h3>Samenvoegen vóór gebruik</h3>
+<p>De dataset bevat <em>aparte</em> tabellen voor 2023 en 2024. Voeg ze <strong>eerst samen</strong> via Power Query → <em>Query's toevoegen als nieuw</em>. Zo krijg je één tabel <code>Overnachtingen</code> met alle jaren, én een kolom <code>Boekjaar</code> zodat je later per jaar kunt filteren.</p>
+<p>Doe hetzelfde voor <code>Prijstabel_Kamers 2023</code> en <code>Prijstabel_Kamers 2024</code> → samenvoegen tot <code>Prijstabel_Kamers</code>.</p>
+
+<h3>DAX — Omzet Kamers</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Omzet Kamers =
+SUMX(
+    Overnachtingen,
+    Overnachtingen[Aantal] *
+    SWITCH(
+        Overnachtingen[Tariefsklasse],
+        "Kamer Tariefsklasse A", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse A]),
+        "Kamer Tariefsklasse B", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse B]),
+        "Kamer Tariefsklasse C", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse C]),
+        0
+    )
+)</pre>
+<p>SUMX loopt rij voor rij door Overnachtingen. Per rij haalt RELATED de bijbehorende prijs op uit Prijstabel_Kamers via de relatie op KamerSeizoensCode. SWITCH kiest de juiste prijskolom op basis van de tariefsklasse.</p>
+
+<h3>Visual bouwen</h3>
+<ol>
+<li>Maak de measure <strong>Omzet Kamers</strong> in de tabel <code>_Metingen</code>.</li>
+<li>Voeg een <strong>geclusterd staafdiagram</strong> toe aan de rapportpagina.</li>
+<li>Sleep <code>_Kalender[Jaar]</code> naar de X-as en <code>[Omzet Kamers]</code> naar de Y-as.</li>
+<li>Wil je 2023 én 2024 als aparte lijnen? Kies een <strong>lijndiagram</strong> en zet <code>_Kalender[Jaar]</code> als legenda.</li>
+</ol>`
+  },
+  {
+    keys: ['maand kamer','tabblad maand','financieel','maandelijks','maand resultaat','per maand','maandoverzicht'],
+    title: 'Tabblad Maand Kamer',
+    html: `<p>Dit tabblad toont de maandelijkse financiële prestaties van kamerreserveringen, inclusief vergelijking met vorig jaar en cumulatief verloop.</p>
+
+<h3>Benodigde tabellen en waarom</h3>
+<ul>
+<li><strong>Overnachtingen</strong> (append 2023+2024) — de feitentabel met alle boekingen. Velden: <code>Factuurdatum</code> (voor tijdfilter), <code>Aantal</code> (nachten), <code>Tariefsklasse</code> (voor prijsbepaling), <code>KamerSeizoensCode</code> (koppelveld naar prijzen).</li>
+<li><strong>Prijstabel_Kamers</strong> (append 2023+2024) — prijzen per tariefsklasse per seizoen. Koppeling via <code>KamerSeizoensCode</code>. Bevat ook <code>BTW %</code> als je excl. BTW wilt rapporteren.</li>
+<li><strong>_Kalender</strong> — tijdsdimensie. Koppeling via <code>_Kalender[Datum]</code> → <code>Overnachtingen[Factuurdatum]</code>. Levert kolommen als <code>Maandnaam</code>, <code>Jaar</code>, <code>Kwartaal</code>. <em>Zonder deze koppeling werken SAMEPERIODLASTYEAR en TOTALYTD niet.</em></li>
+</ul>
+
+<h3>Alle measures voor dit tabblad</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Omzet Kamers =
+SUMX(Overnachtingen, Overnachtingen[Aantal] *
+    SWITCH(Overnachtingen[Tariefsklasse],
+        "Kamer Tariefsklasse A", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse A]),
+        "Kamer Tariefsklasse B", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse B]),
+        "Kamer Tariefsklasse C", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse C]), 0))
+
+Omzet Vorig Jaar =
+CALCULATE([Omzet Kamers], SAMEPERIODLASTYEAR(_Kalender[Datum]))
+
+Omzet YTD =
+TOTALYTD([Omzet Kamers], _Kalender[Datum])
+
+Omzet YTD Vorig Jaar =
+CALCULATE([Omzet YTD], SAMEPERIODLASTYEAR(_Kalender[Datum]))
+
+Afwijking Absoluut = [Omzet Kamers] - [Omzet Vorig Jaar]
+
+Afwijking % = DIVIDE([Afwijking Absoluut], [Omzet Vorig Jaar])
+
+Kleur Afwijking = IF([Afwijking Absoluut] >= 0, "#16A34A", "#DC2626")</pre>
+
+<h3>Visuals op dit tabblad</h3>
+<ul>
+<li><strong>Slicer</strong> op <code>_Kalender[Jaar]</code> — zodat de manager een jaar selecteert en alle visuals automatisch filteren.</li>
+<li><strong>KPI-kaarten</strong> — toon Omzet Kamers, Afwijking Absoluut en Afwijking % bovenaan.</li>
+<li><strong>Geclusterd staafdiagram</strong> — X-as: <code>_Kalender[Maandnaam]</code>, staven: Omzet Kamers + Omzet Vorig Jaar naast elkaar.</li>
+<li><strong>Lijndiagram</strong> — Omzet YTD vs Omzet YTD Vorig Jaar voor het cumulatieve verloop.</li>
+<li>Pas <strong>conditionele opmaak</strong> toe op de afwijkingskaart met de measure <code>Kleur Afwijking</code>.</li>
+</ul>`
+  },
+  {
+    keys: ['maand dienst','overige diensten','tabblad dienst','ontbijt','lunch','dinner','wellness','horeca','restaurant'],
+    title: 'Tabblad Maand Diensten',
+    html: `<p>Zelfde opzet als Maand Kamer, maar nu voor de overige diensten: ontbijt, lunch, dinner en wellness. Voeg ook de onderlinge omzetverhouding toe.</p>
+
+<h3>Benodigde tabellen en waarom</h3>
+<ul>
+<li><strong>Overige_Diensten</strong> (append 2023+2024) — feitentabel met alle afgenomen diensten. Velden: <code>Factuurdatum</code>, <code>Aantal</code>, <code>Grootboekrekening</code> (dit is de dienst-code, bijv. 8430 = Ontbijt). <em>De prijzen staan hier niet in.</em></li>
+<li><strong>Prijs_Overig</strong> (append 2023+2024) — prijzen per dienst. Veld <code>Code</code> = grootboekrekeningnummer, koppelt aan <code>Overige_Diensten[Grootboekrekening]</code>. Bevat <code>Naam</code> (Ontbijt/Lunch/Dinner/Wellness), <code>Prijs</code> en <code>BTW %</code> (9% laag tarief).</li>
+<li><strong>_Kalender</strong> — koppeling via <code>_Kalender[Datum]</code> → <code>Overige_Diensten[Factuurdatum]</code> voor tijdsfiltering en vorig-jaar vergelijking.</li>
+</ul>
+
+<h3>Samenvoegen in Power Query</h3>
+<p>Voeg samen: <code>Overige_Diensten 2023</code> + <code>Overige_Diensten 2024</code> → één tabel <code>Overige_Diensten</code>. Doe hetzelfde voor <code>Prijs_Overig 2023</code> + <code>Prijs_Overig 2024</code>. Zorg dat de kolomnamen identiek zijn vóór het appenden.</p>
+
+<h3>DAX measures</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">Omzet Overig =
+SUMX(Overige_Diensten,
+    Overige_Diensten[Aantal] * RELATED(Prijs_Overig[Prijs]))
+
+Omzet Overig Vorig Jaar =
+CALCULATE([Omzet Overig], SAMEPERIODLASTYEAR(_Kalender[Datum]))
+
+Afwijking Overig Absoluut =
+[Omzet Overig] - [Omzet Overig Vorig Jaar]
+
+Afwijking Overig % =
+DIVIDE([Afwijking Overig Absoluut], [Omzet Overig Vorig Jaar])</pre>
+
+<h3>Omzetverhouding per dienst</h3>
+<p>Gebruik een <strong>ringdiagram</strong>: sleep <code>Prijs_Overig[Naam]</code> naar Legenda en <code>[Omzet Overig]</code> naar Waarden. Zo zie je direct welke dienst het meest bijdraagt. Voeg ook een <strong>gestapeld staafdiagram per maand</strong> toe om de verhouding over de tijd te zien.</p>`
+  },
+  {
+    keys: ['klant','ranking','land','per land','klantperspectief','klanten tabblad','klantanalyse','klantsegment'],
+    title: 'Tabblad Klanten + ranking per land',
+    html: `<p>Dit tabblad toont de financiële prestaties vanuit klantperspectief: welke landen leveren de meeste omzet op, en hoe verhouden particuliere en zakelijke klanten zich?</p>
+
+<h3>Benodigde tabellen en waarom</h3>
+<ul>
+<li><strong>Overnachtingen</strong> + <strong>Overige_Diensten</strong> — de twee feitentabellen die samen de totale omzet vormen. Je hebt beide nodig om het complete klantprofiel te tonen.</li>
+<li><strong>Klantinformatie</strong> — beschrijft wie de klant is. Koppeling via <code>Klantnummer</code> aan zowel Overnachtingen als Overige_Diensten. Bevat: <code>P/Z</code> (Particulier of Zakelijk), <code>Geslacht</code>, <code>LeeftijdsCAT</code>. Gebruik voor segmentatie op klantsegment.</li>
+<li><strong>Geografische_Spreiding</strong> — koppeling via <code>Klantnummer</code>. Bevat <code>Land</code> en <code>Landcode</code>. Gebruik <code>Landcode</code> (bijv. NL, DE) voor de kaartvisual — Power BI herkent ISO-landcodes betrouwbaarder dan volledige landnamen.</li>
+</ul>
+
+<h3>DAX measures</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Totale Omzet = [Omzet Kamers] + [Omzet Overig]
+
+Ranking per Land =
+RANKX(
+    ALL(Geografische_Spreiding[Land]),
+    [Totale Omzet],
+    ,
+    DESC,
+    Dense
+)
+
+Omzet Particulier =
+CALCULATE([Totale Omzet], Klantinformatie[P/Z] = "Particulier")
+
+Omzet Zakelijk =
+CALCULATE([Totale Omzet], Klantinformatie[P/Z] = "Zakelijk")</pre>
+
+<h3>Visuals</h3>
+<ul>
+<li><strong>Kaartvisual</strong> — <code>Geografische_Spreiding[Landcode]</code> als locatie, <code>[Totale Omzet]</code> als bubbelgrootte.</li>
+<li><strong>Tabel</strong> — Land, Totale Omzet, Ranking per Land — gesorteerd op Ranking.</li>
+<li><strong>Slicer</strong> — <code>Klantinformatie[P/Z]</code> voor filteren op Particulier/Zakelijk.</li>
+<li><strong>Drill-through</strong> — rechtermuisknop op een land → ga naar tabblad "Hotelomzet per land". Stel dit in via Rapportpagina → Drill-through-velden → voeg Land toe.</li>
+</ul>`
+  },
+  {
+    keys: ['rating','klantrating','tevredenheid','score','beoordeling','welness','tevreden'],
+    title: 'Tabblad Klantrating',
+    html: `<p>Toont hoe tevreden klanten zijn over de kamers en diensten. Let op: ratings zijn <em>alleen beschikbaar vanaf 2024</em> — er is geen 2023-vergelijking mogelijk.</p>
+
+<h3>Benodigde tabellen en waarom</h3>
+<ul>
+<li><strong>Rating_Diensten</strong> — de kerntabel voor dit tabblad. Bevat per boeking (<code>Betalingsreferentie</code>) de scores voor Ontbijt, Lunch, Dinner, Kamers en Welness (schaal 1–5). Veel cellen zijn leeg — niet elke gast beoordeelt elke dienst. DAX moet dit correct afhandelen.</li>
+<li><strong>Overnachtingen</strong> — koppeling via <code>Betalingsreferentie</code>. Hierdoor kun je ratings filteren op datum, seizoen of kamertype.</li>
+<li><strong>Klantinformatie</strong> — koppeling via <code>Klantnummer</code> (via Overnachtingen). Levert <code>P/Z</code>, <code>Geslacht</code> en <code>LeeftijdsCAT</code> voor segmentatieanalyse.</li>
+<li><strong>_Kalender</strong> — voor het filter op jaar 2024. Zet een pagina-niveau filter op <code>_Kalender[Jaar] = 2024</code>.</li>
+</ul>
+
+<h3>DAX measures</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>-- ISBLANK filter voorkomt dat lege cellen het gemiddelde vertekenen:
+Gem. Rating Kamers =
+CALCULATE(AVERAGE(Rating_Diensten[Kamers]),
+    NOT(ISBLANK(Rating_Diensten[Kamers])))
+
+Gem. Rating Ontbijt =
+CALCULATE(AVERAGE(Rating_Diensten[Ontbijt]),
+    NOT(ISBLANK(Rating_Diensten[Ontbijt])))
+
+-- Herhaal voor: Lunch, Dinner, Welness
+
+Aantal Beoordelingen Kamers =
+CALCULATE(COUNTROWS(Rating_Diensten),
+    NOT(ISBLANK(Rating_Diensten[Kamers])))</pre>
+
+<h3>Visuals</h3>
+<ul>
+<li><strong>KPI-kaarten</strong> — één per dienst, gemiddelde score + aantal beoordelingen.</li>
+<li><strong>Geclusterd staafdiagram</strong> — alle diensten naast elkaar, gesplitst op Particulier vs Zakelijk via slicer op <code>Klantinformatie[P/Z]</code>.</li>
+<li><strong>Paginalevel filter</strong> — zet <code>_Kalender[Jaar]</code> op 2024 zodat de pagina nooit lege 2023-data toont.</li>
+</ul>`
+  },
+  {
+    keys: ['signaal','groen','rood','afwijking','conditione','kleur','kleurcode','opmaak'],
+    title: 'Signaalkleuren groen/rood',
+    html: `<p>Signaalkleuren maken afwijkingen t.o.v. vorig jaar direct herkenbaar. De opdracht vereist dit op de tabbladen Maand Kamer en Maand Diensten.</p>
+
+<h3>Benodigde measure</h3>
+<p>Je hebt eerst de measure <strong>Afwijking Absoluut</strong> nodig (zie tabblad Maand Kamer). Maak dan een kleurmeasure:</p>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">Kleur Afwijking =
+IF([Afwijking Absoluut] >= 0, "#16A34A", "#DC2626")
+-- #16A34A = groen, #DC2626 = rood</pre>
+
+<h3>Toepassen via conditionele opmaak</h3>
+<ol>
+<li>Selecteer de KPI-kaart of het getal in de visual.</li>
+<li>Ga naar het <strong>Opmaak-paneel</strong> (verfkwastje) → <strong>Conditionele opmaak</strong>.</li>
+<li>Kies bij <em>Lettertypekleur</em>: <strong>Veldwaarde</strong> → selecteer <code>[Kleur Afwijking]</code>.</li>
+</ol>
+<p>Of gebruik <em>Regels</em> zonder extra measure: als waarde ≥ 0 → kleur #16A34A, als waarde &lt; 0 → kleur #DC2626.</p>
+<p>💡 Definieer <code>Kleur Afwijking</code> één keer in <code>_Metingen</code> en hergebruik hem op beide tabbladen — zo blijft de kleurlogica consistent, wat een beoordelingscriterium is.</p>`
+  },
+  {
+    keys: ['navigatie','menu','startpagina','knop','bladwijzer','bookmark','huisje','terug','pagina wisselen'],
+    title: 'Navigatiemenu + bladwijzers',
+    html: `<p>De opdracht vereist een navigatiemenu op de startpagina én een terugknop op elke pagina. Hiervoor gebruik je <strong>knoppen met Paginanavigatie-actie</strong>.</p>
+
+<h3>Navigatiemenu bouwen op de Start-pagina</h3>
+<ol>
+<li>Ga naar <strong>Invoegen → Knoppen → Leeg</strong> (of kies een icoon-knop).</li>
+<li>Selecteer de knop → open het <strong>Opmaak-paneel</strong>.</li>
+<li>Ga naar <strong>Actie → Type: Paginanavigatie</strong> → kies de doelpagina.</li>
+<li>Herhaal voor elke van de 5 pagina's (Maand Kamer, Maand Diensten, Klanten, Hotelomzet per land, Klantrating).</li>
+<li>Pas de knoppen aan: kleur <code>#7A3A24</code>, witte tekst, zelfde grootte voor uniformiteit.</li>
+</ol>
+
+<h3>Terugknop op elke pagina</h3>
+<ol>
+<li>Voeg op elke pagina een kleine knop toe (bijv. een huisje-icoon via <strong>Invoegen → Knoppen → Start</strong>).</li>
+<li>Stel de actie in op <strong>Paginanavigatie → Start</strong>.</li>
+<li>Zet de knop consequent op dezelfde positie op elke pagina (bijv. linksboven).</li>
+</ol>
+
+<h3>Bladwijzers (voor gevorderde navigatie)</h3>
+<p>Bladwijzers sla je de <em>toestand</em> van een pagina op, inclusief filters en zichtbaarheid. Gebruik dit voor drill-through-effecten of pop-up panelen:</p>
+<ol>
+<li><strong>Weergave → Bladwijzers</strong> openen.</li>
+<li>Stel de gewenste pagina-toestand in → klik <strong>Toevoegen</strong>.</li>
+<li>Knop → Actie → Type: <strong>Bladwijzer</strong> → selecteer de bladwijzer.</li>
+</ol>`
+  },
+  {
+    keys: ['ultimate calendar','avi singh','kalender','datumtabel','tijdsdimensie','datum tabel','calendar'],
+    title: 'Ultimate Calendar van Avi Singh',
+    html: `<p>De Ultimate Calendar is een uitgebreide Power Query M-tabel die de opdracht verplicht stelt als tijdsdimensie. Een gewone CALENDAR()-functie in DAX is <em>niet</em> voldoende, omdat die minder kolommen heeft en minder goed integreert met tijdsintelligentiefuncties.</p>
+
+<h3>Waarom verplicht?</h3>
+<p>Functies als <strong>SAMEPERIODLASTYEAR</strong>, <strong>TOTALYTD</strong> en <strong>DATEADD</strong> vereisen een aaneengesloten datumreeks zonder gaten, in een tabel die als datumtabel is gemarkeerd. De Ultimate Calendar levert dit kant-en-klaar, plus extra kolommen als WeekNummer, DagVanDeWeek, IsWeekend en periodebenamingen.</p>
+
+<h3>Importeren</h3>
+<ol>
+<li>Zoek online: <strong>"Avi Singh Power BI Ultimate Calendar"</strong> — download de .pbix of kopieer de M-code.</li>
+<li>Power Query Editor → <strong>Start → Nieuwe bron → Lege query</strong>.</li>
+<li>Klik <strong>Geavanceerde editor</strong> → verwijder de standaardtekst → plak de M-code.</li>
+<li>Pas de parameters aan: startdatum <code>1-1-2023</code>, einddatum <code>31-12-2024</code>.</li>
+<li>Hernoem de query naar <code>_Kalender</code>.</li>
+<li>Klik <strong>Sluiten en toepassen</strong>.</li>
+</ol>
+
+<h3>Relaties instellen (verplicht)</h3>
+<p>Maak in Model-weergave twee relaties:</p>
+<ul>
+<li><code>_Kalender[Datum]</code> → <code>Overnachtingen[Factuurdatum]</code></li>
+<li><code>_Kalender[Datum]</code> → <code>Overige_Diensten[Factuurdatum]</code></li>
+</ul>
+<p>Rechtermuisknop op <code>_Kalender</code> in het veldenpaneel → <strong>Als datumtabel markeren</strong> → selecteer de kolom <code>Datum</code>.</p>`
+  },
+  {
+    keys: ['meting','_metingen','measure tabel','aparte tabel','measures opslaan'],
+    title: '_Metingen tabel aanmaken',
+    html: `<p>De opdracht verplicht dat <em>alle</em> DAX-measures in een aparte tabel <code>_Metingen</code> staan. Dit is een best practice: alle berekeningen staan overzichtelijk bij elkaar, los van de data.</p>
+
+<h3>Waarom een aparte tabel?</h3>
+<p>Standaard maakt Power BI measures aan in de tabel waarop je rechtsklikt. Als je dat niet bewust doet, belanden measures verspreid over verschillende tabellen. De opdracht vereist <code>_Metingen</code> expliciet. De underscore zorgt dat de tabel bovenaan de lijst staat in het veldenpaneel.</p>
+
+<h3>Aanmaken</h3>
+<ol>
+<li>Ga naar <strong>Start → Gegevens invoeren</strong>.</li>
+<li>Geef de tabel één kolom (naam: "Placeholder"), één lege rij, naam: <code>_Metingen</code>.</li>
+<li>Klik <strong>Laden</strong>.</li>
+<li>Verberg de kolom "Placeholder": rechtermuisknop in Modelweergave → <strong>Verbergen in rapportweergave</strong>.</li>
+</ol>
+
+<h3>Measures aanmaken</h3>
+<p>Rechtermuisknop op <code>_Metingen</code> in het veldenpaneel → <strong>Nieuwe measure</strong>. Alle measures die je zo aanmaakt staan automatisch in <code>_Metingen</code>. Zet hier alle measures: Omzet Kamers, Omzet Overig, YTD-berekeningen, afwijkingen, kleurmeasures, rankings — alles.</p>`
+  },
+  {
+    keys: ['ytd','cumulatief','jaar tot','running total','lopend totaal','cumul'],
+    title: 'Cumulatieve omzet (YTD)',
+    html: `<p>YTD (Year-To-Date) is de opgetelde omzet vanaf 1 januari tot de geselecteerde datum. Dit geeft de manager inzicht in het lopende jaarresultaat.</p>
+
+<h3>Benodigde tabellen</h3>
+<ul>
+<li><strong>_Kalender</strong> — verplicht voor TOTALYTD. De functie gebruikt de datumkolom van de kalender als referentiepunt. Zonder een correct gemarkeerde datumtabel werkt TOTALYTD niet.</li>
+<li><strong>Overnachtingen + Prijstabel_Kamers</strong> — via de measure <code>Omzet Kamers</code> die al bestaat.</li>
+</ul>
+
+<h3>DAX</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Omzet YTD =
+TOTALYTD([Omzet Kamers], _Kalender[Datum])
+
+Omzet YTD Vorig Jaar =
+CALCULATE(
+    [Omzet YTD],
+    SAMEPERIODLASTYEAR(_Kalender[Datum])
+)
+
+Afwijking YTD =
+[Omzet YTD] - [Omzet YTD Vorig Jaar]</pre>
+
+<h3>Visual</h3>
+<p>Gebruik een <strong>lijndiagram</strong> met twee lijnen — YTD huidig jaar en YTD vorig jaar — op de X-as <code>_Kalender[Maandnaam]</code>. Hoe groter het gat tussen de lijnen, hoe groter de afwijking ten opzichte van vorig jaar. Combineer met een slicer op <code>_Kalender[Jaar]</code>.</p>`
+  },
+  {
+    keys: ['vorig jaar','sameperiod','same period','year over year','yoy','jaarop','vergelijk jaar'],
+    title: 'Vergelijking met vorig jaar (SAMEPERIODLASTYEAR)',
+    html: `<p><strong>SAMEPERIODLASTYEAR</strong> verschuift de datumfilter exact één jaar terug. Als de slicer op "april 2024" staat, berekent de measure automatisch "april 2023".</p>
+
+<h3>Vereisten</h3>
+<ul>
+<li>Een actieve relatie tussen <code>_Kalender[Datum]</code> en <code>Overnachtingen[Factuurdatum]</code>.</li>
+<li>De <code>_Kalender</code> tabel moet gemarkeerd zijn als datumtabel (aaneengesloten reeks, geen gaten).</li>
+<li>Data in beide jaren — als er geen 2023-data is, retourneert de measure BLANK.</li>
+</ul>
+
+<h3>DAX</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Omzet Vorig Jaar =
+CALCULATE(
+    [Omzet Kamers],
+    SAMEPERIODLASTYEAR(_Kalender[Datum])
+)
+
+Afwijking Absoluut = [Omzet Kamers] - [Omzet Vorig Jaar]
+
+Afwijking % = DIVIDE([Afwijking Absoluut], [Omzet Vorig Jaar])
+
+-- DIVIDE() voorkomt een delingsfout als Omzet Vorig Jaar = 0 of BLANK</pre>
+
+<p>Gebruik dezelfde aanpak voor overige diensten: vervang <code>[Omzet Kamers]</code> door <code>[Omzet Overig]</code>.</p>`
+  },
+  {
+    keys: ['calculate','bereken','context','filter dax'],
+    title: 'CALCULATE uitgelegd',
+    html: `<p><strong>CALCULATE</strong> is de krachtigste DAX-functie. Het evalueert een bestaande measure, maar past daarvoor de <em>filtercontext</em> aan. Zo kun je dezelfde basisberekening hergebruiken met een ander filter.</p>
+
+<h3>Hoe werkt het?</h3>
+<p>Zonder CALCULATE is een measure afhankelijk van wat de gebruiker filtert via slicers en visuals. Met CALCULATE dwing je zelf een filter af — ongeacht wat er in het rapport geselecteerd is.</p>
+
+<h3>Voorbeelden uit de opdracht</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">-- Alleen jaar 2024 berekenen:
+Omzet 2024 =
+CALCULATE([Omzet Kamers], _Kalender[Jaar] = 2024)
+
+-- Alleen particuliere klanten:
+Omzet Particulier =
+CALCULATE([Totale Omzet], Klantinformatie[P/Z] = "Particulier")
+
+-- Vorig jaar (CALCULATE + tijdsintelligentie):
+Omzet Vorig Jaar =
+CALCULATE([Omzet Kamers], SAMEPERIODLASTYEAR(_Kalender[Datum]))
+
+-- Aandeel per land — ALL() verwijdert het landfilter zodat
+-- de noemer altijd het totaal over alle landen is:
+Aandeel Land % =
+DIVIDE(
+    [Totale Omzet],
+    CALCULATE([Totale Omzet], ALL(Geografische_Spreiding[Land]))
+)</pre>`
+  },
+  {
+    keys: ['sumx','sum verschil','wanneer sumx','iteratie','rij voor rij'],
+    title: 'SUMX vs SUM — wanneer gebruik je wat?',
+    html: `<p><strong>SUM</strong> telt alle waarden in één bestaande kolom op. <strong>SUMX</strong> loopt rij voor rij door een tabel, berekent per rij iets, en telt daarna alle resultaten op.</p>
+
+<h3>Waarom SUMX nodig is in de hoteldata</h3>
+<p>De omzet staat <em>niet</em> als bedrag in de dataset. Je moet hem berekenen als: <code>Aantal nachten × Prijs per tariefsklasse</code>. De prijs staat bovendien in een <em>andere tabel</em> (Prijstabel_Kamers). SUMX loopt rij voor rij door Overnachtingen, haalt via RELATED de juiste prijs op, vermenigvuldigt, en telt daarna alles op.</p>
+
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>-- SUM: werkt alleen als het bedrag al als kolom bestaat
+Totaal Nachten = SUM(Overnachtingen[Aantal])
+
+-- SUMX: per rij berekenen (Aantal × Prijs), dan optellen
+Omzet Kamers =
+SUMX(
+    Overnachtingen,
+    Overnachtingen[Aantal] *
+    SWITCH(Overnachtingen[Tariefsklasse],
+        "Kamer Tariefsklasse A", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse A]),
+        "Kamer Tariefsklasse B", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse B]),
+        "Kamer Tariefsklasse C", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse C]),
+        0)
+)</pre>
+<p>RELATED() haalt de prijs op via de relatie tussen <code>Overnachtingen[KamerSeizoensCode]</code> en <code>Prijstabel_Kamers[KamerSeizoensCode]</code>. Zonder die relatie in het datamodel werkt RELATED niet.</p>`
+  },
+  {
+    keys: ['rankx','ranking','rang','positie','top','sorter'],
+    title: 'RANKX — ranking per land',
+    html: `<p><strong>RANKX</strong> berekent een rangnummer voor elke rij in een tabel, op basis van een measure. Voor het Klanten-tabblad gebruik je het om landen te rangschikken op omzet.</p>
+
+<h3>Benodigde tabellen</h3>
+<ul>
+<li><strong>Geografische_Spreiding</strong> — bevat <code>Land</code> en <code>Landcode</code>. Koppeling via <code>Klantnummer</code> aan Overnachtingen en Overige_Diensten.</li>
+<li><strong>Totale Omzet</strong> — de measure die je al hebt aangemaakt.</li>
+</ul>
+
+<h3>DAX</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Ranking per Land =
+RANKX(
+    ALL(Geografische_Spreiding[Land]),
+    [Totale Omzet],
+    ,
+    DESC,
+    Dense
+)</pre>
+<p><strong>ALL(Geografische_Spreiding[Land])</strong> zorgt dat de ranking over <em>alle</em> landen berekend wordt, ook als in een slicer of visual slechts één land geselecteerd is. Zonder ALL zou elk land altijd rank 1 hebben. <strong>Dense</strong> = geen rangnummers overslaan bij gelijke omzet.</p>`
+  },
+  {
+    keys: ['append','power query','combineer','samenvoeg','2023 2024','twee jaar','query toevoegen'],
+    title: 'Append in Power Query — 2023 en 2024 samenvoegen',
+    html: `<p>De dataset bevat aparte tabbladen per jaar. Vóór je het datamodel bouwt, voeg je de jaren samen via <strong>Append</strong> in Power Query. Dit doe je voor twee tabelgroepen: kamerboekingen en overige diensten.</p>
+
+<h3>Welke tabellen samenvoegen en waarom</h3>
+<ul>
+<li><strong>Overnachtingen 2023 + 2024</strong> → één tabel <code>Overnachtingen</code>. Zo heb je alle boekingen in één feitentabel en kun je via <code>Boekjaar</code> filteren per jaar.</li>
+<li><strong>Prijstabel Kamers 2023 + 2024</strong> → één tabel <code>Prijstabel_Kamers</code>. Prijzen kunnen per jaar verschillen; door ze samen te voegen en via <code>Jaar</code> te koppelen krijg je altijd de juiste prijs per boeking.</li>
+<li><strong>Overige_Diensten 2023 + 2024</strong> → één tabel <code>Overige_Diensten</code>.</li>
+<li><strong>Prijs_Overig 2023 + 2024</strong> → één tabel <code>Prijs_Overig</code>.</li>
+</ul>
+
+<h3>Stappen in Power Query</h3>
+<ol>
+<li>Open Power Query: <strong>Start → Gegevens transformeren</strong>.</li>
+<li>Selecteer tabel <em>Overnachtingen 2023</em>.</li>
+<li>Klik: <strong>Start → Query's toevoegen als nieuw</strong>.</li>
+<li>Selecteer <em>Overnachtingen 2024</em> als tweede tabel → OK.</li>
+<li>Hernoem de nieuwe gecombineerde query naar <code>Overnachtingen</code>.</li>
+<li>Herhaal voor de overige drie tabelgroepen.</li>
+<li>Klik <strong>Sluiten en toepassen</strong>.</li>
+</ol>
+<p>⚠️ <strong>Belangrijk:</strong> controleer vóór het appenden of de kolomnamen in beide jaren identiek zijn. Zelfs een verschil in hoofdletters of een spatie extra zorgt voor een extra (lege) kolom in de gecombineerde tabel.</p>`
+  },
+  {
+    keys: ['btw','exclusief btw','incl btw','belasting','netto','bruto'],
+    title: 'BTW-berekening',
+    html: `<p>Alle prijzen in de dataset zijn <strong>inclusief BTW</strong>. Voor management-rapportages wil je vaak exclusief BTW. De BTW-percentages staan in de prijstabellen.</p>
+
+<h3>BTW-tarieven in de dataset</h3>
+<ul>
+<li><strong>Kamers</strong> — 21% (hoog tarief), opgeslagen als <code>0.21</code> in <code>Prijstabel_Kamers[BTW %]</code>.</li>
+<li><strong>Overige diensten</strong> (eten/drinken) — 9% (laag tarief), opgeslagen als <code>0.09</code> in <code>Prijs_Overig[BTW %]</code>.</li>
+</ul>
+
+<h3>Formule: incl. → excl.</h3>
+<p>Prijs excl. BTW = Prijs incl. BTW ÷ (1 + BTW%). Dus €310 ÷ 1.21 = €256,20.</p>
+
+<h3>DAX measures</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">Omzet Kamers Excl BTW =
+SUMX(Overnachtingen,
+    Overnachtingen[Aantal] *
+    DIVIDE(
+        SWITCH(Overnachtingen[Tariefsklasse],
+            "Kamer Tariefsklasse A", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse A]),
+            "Kamer Tariefsklasse B", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse B]),
+            "Kamer Tariefsklasse C", RELATED(Prijstabel_Kamers[Kamer Tariefsklasse C]), 0),
+        1 + RELATED(Prijstabel_Kamers[BTW %])
+    ))
+
+Omzet Overig Excl BTW =
+SUMX(Overige_Diensten,
+    Overige_Diensten[Aantal] *
+    DIVIDE(RELATED(Prijs_Overig[Prijs]), 1 + RELATED(Prijs_Overig[BTW %])))</pre>
+<p>💡 Kies één rapportagebasis (incl. of excl. BTW) en gebruik die <em>consequent</em> op alle tabbladen. Vermeld dit in de titel van je visuals.</p>`
+  },
+  {
+    keys: ['star schema','stermodel','datamodel','relatie','feitentabel','dimensie','model opzetten','model bouwen'],
+    title: 'Star schema opzetten',
+    html: `<p>Een star schema is het aanbevolen datamodel voor Power BI. Eén of meer centrale <strong>feitentabellen</strong> met meetwaarden worden omringd door <strong>dimensietabellen</strong> met beschrijvende informatie.</p>
+
+<h3>Feitentabellen (de kern)</h3>
+<ul>
+<li><strong>Overnachtingen</strong> — bevat alle kamerboekingen met Aantal, Tariefsklasse en datum. Dit zijn de meetwaarden die je wilt analyseren.</li>
+<li><strong>Overige_Diensten</strong> — bevat alle afgenomen diensten met Aantal en dienst-code.</li>
+</ul>
+
+<h3>Dimensietabellen (de context)</h3>
+<ul>
+<li><strong>Prijstabel_Kamers</strong> — koppelt via <code>KamerSeizoensCode</code> aan Overnachtingen. Geeft de prijs per tariefsklasse per seizoen.</li>
+<li><strong>Prijs_Overig</strong> — koppelt via <code>Code = Grootboekrekening</code> aan Overige_Diensten. Geeft naam en prijs per dienst.</li>
+<li><strong>Klantinformatie</strong> — koppelt via <code>Klantnummer</code> aan beide feitentabellen. Geeft demografische klantinfo.</li>
+<li><strong>Geografische_Spreiding</strong> — koppelt via <code>Klantnummer</code>. Geeft herkomstland per klant.</li>
+<li><strong>Rating_Diensten</strong> — koppelt via <code>Betalingsreferentie</code> aan Overnachtingen. Geeft tevredenheidsscores.</li>
+<li><strong>Seizoen</strong> — koppelt via <code>Periode</code> aan Overnachtingen. Geeft maand- en seizoensinfo.</li>
+<li><strong>Bedrijfsonderdelen</strong> — koppelt via <code>Code = Bedrijfsonderdeel</code>. Geeft namen van bedrijfsonderdelen.</li>
+<li><strong>_Kalender</strong> — koppelt via <code>Datum = Factuurdatum</code> aan beide feitentabellen. Verplicht voor tijdsintelligentie.</li>
+</ul>
+
+<h3>Relaties instellen</h3>
+<p>Ga naar <strong>Model-weergave</strong> → sleep het koppelveld van de feitentabel naar het overeenkomstige veld in de dimensietabel. De pijl wijst altijd naar de dimensietabel (de "één"-kant). Klik op <strong>Toon datamodel</strong> in de zijbalk voor een visueel overzicht.</p>`
+  },
+  {
+    keys: ['beoordeling','criteria','volledigheid','technisch','vormgeving','wauw','originaliteit','punten'],
+    title: 'Beoordelingscriteria',
+    html: `<p>Het dashboard wordt beoordeeld op vier gelijkwaardige aspecten:</p>
+<ul>
+<li><strong>Volledigheid</strong> — zijn alle 6 tabbladen aanwezig? Gebruik je de Ultimate Calendar van Avi Singh? Staan alle measures in <code>_Metingen</code>? Zijn beide logo's gebruikt? Is kleur #7A3A24 toegepast? Staat er op elke pagina een terugknop?</li>
+<li><strong>Technische uitwerking</strong> — is het datamodel een correct star schema? Zijn DAX-measures logisch en foutloos? Gebruik je SAMEPERIODLASTYEAR, RANKX, TOTALYTD correct? Zijn tabellen samengevoegd via Append?</li>
+<li><strong>Vormgeving</strong> — consistente look-and-feel op alle pagina's, kleurschema gebaseerd op #7A3A24, duidelijke titels, juiste sortering in grafieken, uniforme lettertypen en groottes.</li>
+<li><strong>Originaliteit (wauw-factor)</strong> — iets dat opvalt en verder gaat dan het minimum. Ideeën: KPI-samenvatting op de startpagina, drill-through vanuit kaartvisual, conditionele iconen (▲▼) bij afwijkingen, een tooltip-pagina met extra detail bij hover.</li>
+</ul>`
+  },
+  {
+    keys: ['pagina','tabblad','scherm','dashboard','inhoud','bevatten','overzicht dashboard'],
+    title: "Dashboard pagina's — overzicht",
+    html: `<p>Het dashboard bevat minimaal <strong>6 verplichte tabbladen</strong>:</p>
+<ol>
+<li><strong>Start</strong> — navigatiemenu met knoppen naar alle andere pagina's. Voeg het logo toe en gebruik kleur #7A3A24 als achtergrond of accentkleur.</li>
+<li><strong>Maand Kamer</strong> — maandelijkse omzet kamers, cumulatief vs vorig jaar, signaalkleuren, tarief vs overnachtingen. Tabellen nodig: Overnachtingen, Prijstabel_Kamers, _Kalender.</li>
+<li><strong>Maand Diensten</strong> — zelfde opzet als Maand Kamer maar voor overige diensten + ringdiagram met omzetverhouding per dienst. Tabellen: Overige_Diensten, Prijs_Overig, _Kalender.</li>
+<li><strong>Klanten</strong> — kaartvisual per land, ranking per land, segmentatie op Particulier/Zakelijk. Tabellen: Overnachtingen, Overige_Diensten, Klantinformatie, Geografische_Spreiding.</li>
+<li><strong>Hotelomzet per land</strong> — detailpagina bereikbaar via drill-through vanuit Klanten. Zelfde informatie als Klanten maar gefilterd op één land.</li>
+<li><strong>Klantrating</strong> — gemiddelde scores per dienst, vergelijking per klantgroep. Tabellen: Rating_Diensten, Overnachtingen, Klantinformatie. Alleen 2024-data.</li>
+</ol>
+<p>Op <strong>elke pagina</strong>: terugknop naar Start via <em>Invoegen → Knoppen → Actie → Paginanavigatie → Start</em>.</p>`
+  },
+  {
+    keys: ['kleur','thema','huisstijl','#7a3a24','terracotta','bordeaux','logo','kleurschema'],
+    title: 'Kleurthema Hotel Clarity',
+    html: `<p>De opdracht schrijft kleur <strong>#7A3A24</strong> voor als basiskleur — een donker terracotta/bordeaux, de kleur van het Hotel Clarity-logo. Gebruik beide logo's als onderdeel van de huisstijl.</p>
+
+<h3>Thema instellen in Power BI</h3>
+<ol>
+<li>Ga naar <strong>Weergave → Thema aanpassen</strong>.</li>
+<li>Stel <code>#7A3A24</code> in als primaire kleur (eerste kleur in het thema).</li>
+<li>Sla op als JSON-themabestand zodat alle groepsleden hetzelfde thema gebruiken.</li>
+</ol>
+
+<h3>Consistent kleurgebruik</h3>
+<ul>
+<li><code>#7A3A24</code> — headers, knoppen, titelbalk, navigatie-accenten.</li>
+<li><code>#F5EAE6</code> (licht terracotta) — achtergrond geselecteerde elementen, subtiele invulling.</li>
+<li><code>#16A34A</code> groen + <code>#DC2626</code> rood — <em>uitsluitend</em> voor signaalkleuren. Gebruik ze nergens anders om verwarring te voorkomen.</li>
+<li>Neutrale achtergrond — lichtgrijs of wit voor de rapportpagina zelf zodat de visuals goed afsteken.</li>
+</ul>
+<p>💡 Consistentie op alle pagina's is een beoordelingscriterium. Controleer aan het einde of elke pagina dezelfde lettertypes, marges en kleurgebruik heeft.</p>`
+  },
+  {
+    keys: ['versie','versienummer','dataset versie','v1','v2','v3','v4','v5','prijsmodel','seizoen aangepast','bron vervangen'],
+    title: 'Dataset versies — welke gebruik jij?',
+    html: `<p>De hoteldata bestaat in <strong>vijf versies</strong> met elk een ander prijsscenario. Je docent geeft aan welke versie jouw team gebruikt.</p>
+<ul>
+<li><strong>Versie 1</strong> — oorspronkelijke versie (standaard)</li>
+<li><strong>Versie 2</strong> — omgedraaid prijsmodel: tarieven 2023 en 2024 zijn verwisseld t.o.v. versie 1</li>
+<li><strong>Versie 3</strong> — groot prijsverschil omhoog in 2024 t.o.v. 2023</li>
+<li><strong>Versie 4</strong> — groot prijsverschil omlaag in 2024 t.o.v. 2023</li>
+<li><strong>Versie 5</strong> — aangepaste seizoensindeling (Low, Mid, High)</li>
+</ul>
+<h3>Bron wisselen naar andere versie</h3>
+<p>Wil je van versienummer wisselen? Vervang het Excelbestand als bron in Power Query:</p>
+<ol>
+<li>Power Query Editor → <strong>Start → Instellingen voor gegevensbron</strong>.</li>
+<li>Selecteer de huidige Excel-bron → <strong>Bron wijzigen</strong>.</li>
+<li>Selecteer het nieuwe Excel-bestand met het juiste versienummer.</li>
+<li>Klik <strong>Sluiten en toepassen</strong> — alle transformaties blijven intact.</li>
+</ol>`
+  },
+  {
+    keys: ['power query stappen','query stappen','transformeren','overnachtingen query','fovernight','voorwaardelijke kolom','kamertarief kolom','lege kolommen','factuurdatum 1899'],
+    title: 'Power Query stappen — fOvernachtingen',
+    html: `<p>Voer deze stappen uit in Power Query voor <strong>zowel fOvernachtingen 2023 als 2024</strong> voordat je ze samenvoegt.</p>
+
+<h3>Stap 1 — Opschonen</h3>
+<ul>
+<li>Verwijder alle <strong>lege kolommen</strong> (rechtermuisknop op kolom → Verwijderen).</li>
+<li><strong>Alleen in 2024:</strong> filter de waarde <code>31-12-1899</code> uit de kolom <code>Factuurdatum</code> — dit is een datumfout die alleen in 2024 voorkomt.</li>
+</ul>
+
+<h3>Stap 2 — Bedrijfsonderdeel toevoegen</h3>
+<ol>
+<li>Voeg <strong>Query's samenvoegen</strong> uit met <code>dBedrijfsonderdelen</code> op basis van de kolom <code>Code</code>.</li>
+<li>Neem de kolom <code>Bedrijfsonderdeel</code> over en stel het datatype in op <strong>Tekst</strong>.</li>
+<li>Schakel de tabel <code>dBedrijfsonderdelen</code> daarna <strong>uit</strong> in Power Query (laden uitschakelen).</li>
+</ol>
+
+<h3>Stap 3 — Kamerprijzen inladen via Merge</h3>
+<ol>
+<li>Voeg <strong>Query's samenvoegen</strong> uit met <code>Prijstabel_Kamers</code> via de kolom <code>KamerSeizoensCode</code>.</li>
+<li>Neem de drie tariefkolommen over: <code>Kamer Tariefsklasse A</code>, <code>B</code> en <code>C</code>.</li>
+<li>Schakel daarna <code>Prijstabel_Kamers</code> uit als aparte tabel — de prijzen zitten nu direct in fOvernachtingen.</li>
+</ol>
+
+<h3>Stap 4 — Voorwaardelijke kolom Kamertarief</h3>
+<p>Voeg een <strong>voorwaardelijke kolom</strong> toe die het juiste tarief kiest op basis van de Tariefsklasse:</p>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button>Als Tariefsklasse = "Kamer Tariefsklasse A" dan [Kamer Tariefsklasse A]
+Als Tariefsklasse = "Kamer Tariefsklasse B" dan [Kamer Tariefsklasse B]
+Anders [Kamer Tariefsklasse C]</pre>
+<p>Noem deze kolom <code>fKamertarief</code>. Hiermee hoef je in DAX geen SWITCH meer te gebruiken — de prijs staat nu direct als kolom in de tabel.</p>
+
+<h3>Stap 5 — Samenvoegen 2023 + 2024</h3>
+<ol>
+<li>Kopieer de query van 2023 en de query van 2024.</li>
+<li><strong>Start → Query's toevoegen als nieuw</strong> → kies beide queries → resultaat heet <code>fOvernachtingen</code>.</li>
+<li>Schakel de originele 2023- en 2024-queries <strong>uit</strong> (laden uitschakelen) — alleen fOvernachtingen wordt geladen.</li>
+</ol>
+
+<h3>DAX wordt eenvoudiger</h3>
+<p>Doordat de prijs nu als kolom <code>fKamertarief</code> in de feitentabel staat, is de omzetmeasure simpeler:</p>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">fKameromzet = fOvernachtingen[fAantal] * fOvernachtingen[fKamertarief]
+-- Als berekende kolom in Power Query, of als measure:
+Omzet Kamers = SUMX(fOvernachtingen, fOvernachtingen[fAantal] * fOvernachtingen[fKamertarief])</pre>`
+  },
+  {
+    keys: ['overige diensten query','foverige','diensten stappen','query diensten','grootboek merge','dienstomzet'],
+    title: 'Power Query stappen — fOverige Diensten',
+    html: `<p>Voer deze stappen uit voor <strong>zowel fOverige Diensten 2023 als 2024</strong> voordat je ze samenvoegt.</p>
+
+<h3>Stap 1 — Opschonen</h3>
+<ul>
+<li>Verwijder alle <strong>lege kolommen</strong>.</li>
+<li><strong>Alleen in 2024:</strong> filter de waarde <code>31-12-1899</code> uit de kolom <code>Factuurdatum</code>.</li>
+</ul>
+
+<h3>Stap 2 — Bedrijfsonderdeel toevoegen</h3>
+<ol>
+<li><strong>Query's samenvoegen</strong> met <code>dBedrijfsonderdelen</code> op basis van kolom <code>Code</code>.</li>
+<li>Neem kolom <code>Bedrijfsonderdeel</code> over en stel in als <strong>Tekst</strong>.</li>
+<li>Schakel <code>dBedrijfsonderdelen</code> uit na samenvoegen.</li>
+</ol>
+
+<h3>Stap 3 — Prijzen inladen (optioneel maar aanbevolen)</h3>
+<ol>
+<li><strong>Query's samenvoegen</strong> met <code>Prijs_Overig</code> via <code>Grootboekrekening = Code</code>.</li>
+<li>Neem de kolommen <code>Naam</code> (dienst) en <code>Prijs</code> over.</li>
+<li>Hierdoor is de omzetberekening in DAX simpeler — prijs staat direct in de tabel.</li>
+</ol>
+
+<h3>Stap 4 — Samenvoegen 2023 + 2024</h3>
+<ol>
+<li>Kopieer de query van 2023 en de query van 2024.</li>
+<li><strong>Start → Query's toevoegen als nieuw</strong> → resultaat heet <code>fOverige Diensten</code>.</li>
+<li>Schakel de originele 2023- en 2024-queries <strong>uit</strong>.</li>
+</ol>
+
+<h3>DAX na deze stappen</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">fDienstomzet = fOverige Diensten[fAantal] * fOverige Diensten[fPrijs]
+-- Als measure:
+Omzet Overig = SUMX('fOverige Diensten', 'fOverige Diensten'[fAantal] * 'fOverige Diensten'[fPrijs])</pre>`
+  },
+  {
+    keys: ['klantinformatie query','dklant','geografische samenvoegen','klant merge','land kolom','geo uitschakelen'],
+    title: 'Power Query stappen — dKlantinformatie',
+    html: `<p>Verrijk de klantentabel door de geografische spreiding er direct in te voegen — zo heb je maar één klantdimensie nodig.</p>
+
+<h3>Stappen</h3>
+<ol>
+<li>Open <code>dKlantinformatie</code> in Power Query.</li>
+<li><strong>Query's samenvoegen</strong> met <code>dGeografische_Spreiding</code> op basis van <code>Klantnummer</code>.</li>
+<li>Neem de kolom <code>Land</code> over (en optioneel <code>Landcode</code>).</li>
+<li>Schakel de tabel <code>dGeografische_Spreiding</code> daarna <strong>uit</strong> — de landinformatie zit nu in <code>dKlantinformatie</code>.</li>
+</ol>
+
+<h3>Waarom?</h3>
+<p>Door land direct in dKlantinformatie op te nemen, hoef je in het datamodel geen aparte relatie meer te leggen naar dGeografische_Spreiding. Het datamodel wordt eenvoudiger en er zijn minder tabellen zichtbaar in het veldenpaneel.</p>`
+  },
+  {
+    keys: ['rating query','frating','klantnummer rating','factuurdatum rating','dkalender rating','rating samenvoegen'],
+    title: 'Power Query stappen — fRating',
+    html: `<p>De tabel <code>Rating_Diensten</code> bevat alleen <code>Betalingsreferentie</code> en de scores. Om te kunnen filteren op datum en klant moet je extra velden toevoegen via een merge.</p>
+
+<h3>Stappen</h3>
+<ol>
+<li>Open <code>fRating</code> (Rating_Diensten) in Power Query.</li>
+<li><strong>Query's samenvoegen</strong> met <code>fOvernachtingen</code> via <code>Betalingsreferentie</code>.</li>
+<li>Neem de kolommen <code>Klantnummer</code> en <code>Factuurdatum</code> over uit fOvernachtingen.</li>
+</ol>
+
+<h3>Relaties in het datamodel</h3>
+<p>Nu fRating een Factuurdatum en Klantnummer heeft, kun je in het datamodel twee relaties leggen:</p>
+<ul>
+<li><code>fRating[Factuurdatum]</code> → <code>dKalender[Datum]</code> — voor filteren op jaar (alleen 2024 heeft ratings)</li>
+<li><code>fRating[Klantnummer]</code> → <code>dKlantinformatie[Klantnummer]</code> — voor segmentatie op klantgroep</li>
+</ul>`
+  },
+  {
+    keys: ['seizoen kalender','dseizoen','kalender samenvoegen','periode kalender','seizoen uitschakelen','maandmetsales'],
+    title: 'dSeizoen samenvoegen met dKalender + MaandMetSales kolom',
+    html: `<p>De seizoensinformatie voeg je samen met de Ultimate Calendar zodat je via de kalender ook op seizoen kunt filteren. Daarna schakel je de losse seizoenstabel uit.</p>
+
+<h3>Seizoen in dKalender laden</h3>
+<ol>
+<li>Open <code>dKalender</code> in Power Query.</li>
+<li><strong>Query's samenvoegen</strong> met <code>dSeizoen</code> via de kolom <code>Periode</code>.</li>
+<li>Neem de kolom <code>Seizoen</code> over (Low / Mid / High).</li>
+<li>Schakel de losse tabel <code>dSeizoen</code> daarna <strong>uit</strong>.</li>
+</ol>
+
+<h3>Berekende kolom MaandMetSales toevoegen</h3>
+<p>Deze kolom zorgt dat grafieken alleen maanden tonen waarvoor er ook data is — geen lege toekomstige maanden.</p>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">MaandMetSales =
+dKalender[JaarMaandNr] <=
+    YEAR(MAX('fOvernachtingen'[Factuurdatum])) &
+    FORMAT(MAX('fOvernachtingen'[Factuurdatum]),"mm")
+
+-- Let op: de kolom JaarMaandNr moet als Tekst zijn ingesteld in dKalender,
+-- anders werkt de vergelijking niet correct.</pre>
+<p>💡 Voeg <code>MaandMetSales</code> toe als filter op je tijdgrafieken zodat je alleen de maanden ziet met werkelijke boekingen.</p>`
+  },
+  {
+    keys: ['berekende kolom','extra kolom','kolom toevoegen','fkameromzet','fdienstomzet','fprijs','fkamertarief','faantal'],
+    title: 'Berekende kolommen in Power Query',
+    html: `<p>In plaats van alle berekeningen in DAX te doen, kun je een deel al in Power Query als berekende kolom toevoegen. Dit maakt DAX-measures eenvoudiger.</p>
+
+<h3>Kolom fKameromzet (in fOvernachtingen)</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">fKameromzet = fOvernachtingen[fAantal] * fOvernachtingen[fKamertarief]</pre>
+<p>Vereiste: de voorwaardelijke kolom <code>fKamertarief</code> is al aangemaakt (zie Power Query stappen fOvernachtingen). De measure in DAX wordt dan simpelweg:</p>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">Omzet Kamers = SUM(fOvernachtingen[fKameromzet])</pre>
+
+<h3>Kolom fDienstomzet (in fOverige Diensten)</h3>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">fDienstomzet = 'fOverige Diensten'[fAantal] * 'fOverige Diensten'[fPrijs]</pre>
+<p>Vereiste: de kolom <code>fPrijs</code> is al ingeladen via merge met Prijs_Overig. De DAX-measure wordt dan:</p>
+<pre><button class="cpbtn" onclick="cp(this)">Kopieer</button">Omzet Overig = SUM('fOverige Diensten'[fDienstomzet])</pre>
+
+<h3>Voordeel</h3>
+<p>SUM() is eenvoudiger en sneller dan SUMX(). Doordat de berekening al in Power Query gedaan is, hoeft DAX niet meer rij voor rij door de tabel te itereren.</p>`
+  },
+];
+
+// ─── ZOEKFUNCTIE ─────────────────────────────────────────────────────
+// Zoekt op meerdere woorden tegelijk — veel breder dan exacte keyword match
+function findAnswer(input) {
+  const words = input.toLowerCase()
+    .replace(/[?!.,]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+
+  let best = null, bestScore = 0;
+  for (const item of KB) {
+    let score = 0;
+    for (const w of words) {
+      for (const k of item.keys) {
+        if (k.includes(w) || w.includes(k)) score += 2;
+        else if (k.split(' ').some(kw => kw.startsWith(w) || w.startsWith(kw))) score += 1;
+      }
+    }
+    if (score > bestScore) { bestScore = score; best = item; }
+  }
+  return bestScore >= 2 ? best : null;
+}
+
+// ─── CHAT ────────────────────────────────────────────────────────────
+function cp(btn) {
+  const text = btn.parentElement.textContent.replace('Kopieer','').replace('✓','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓'; setTimeout(() => btn.textContent = 'Kopieer', 2000);
+  });
+}
+
+function addMsg(html, isUser, title) {
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isUser ? ' user' : '');
+  const lbl = (!isUser && title) ? `<div class="s-lbl">${title}</div>` : '';
+  row.innerHTML = `<div class="avatar ${isUser?'user':'bot'}">${isUser?'S':'HC'}</div><div class="bubble ${isUser?'user':'bot'}">${lbl}${html}</div>`;
+  msgs.appendChild(row);
+}
+
+function ask(q) {
+  document.getElementById('user-input').value = q;
+  sendMsg();
+}
+
+function sendMsg() {
+  const input = document.getElementById('user-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = ''; input.style.height = 'auto';
+
+  addMsg(val, true);
+
+  // Typing indicator
+  const msgs = document.getElementById('messages');
+  const typing = document.createElement('div');
+  typing.className = 'msg-row'; typing.id = 'typing';
+  typing.innerHTML = `<div class="avatar bot">HC</div><div class="bubble bot"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  msgs.appendChild(typing);
+
+  setTimeout(() => {
+    typing.remove();
+    const result = findAnswer(val);
+    if (result) {
+      addMsg(result.html, false, result.title);
+    } else {
+      addMsg(`<p>Geen antwoord gevonden voor <em>"${val}"</em>.</p>
+<p>Probeer een van de knoppen in het menu, of stel de vraag anders. Bijvoorbeeld:</p>
+<ul>
+<li>"Hoe maak ik het Maand Kamer tabblad?"</li>
+<li>"Hoe gebruik ik SAMEPERIODLASTYEAR?"</li>
+<li>"Hoe append ik tabellen in Power Query?"</li>
+</ul>`, false, 'Niet gevonden');
+    }
+  }, 400);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+addMsg(`<p>Hoi! Ik ben de Power BI coach voor <strong>Hotel Clarity</strong> (opdracht 2).</p>
+<p>Ik help je met het bouwen van het managementdashboard: DAX-formules, datamodel, tabbladen, signaalkleuren, navigatie en alle andere vereisten.</p>
+<p>Gebruik het menu links of typ je vraag hieronder.</p>`, false, null);
+</script>
+</body>
+</html>
